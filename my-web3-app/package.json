@@ -1,0 +1,21 @@
+{
+  "name": "my-web3-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@metamask/detect-provider": "^2.0.0",
+    "dotenv": "^16.5.0",
+    "ethers": "^6.13.7",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.2",
+    "vite": "^6.3.1"
+  }
+}
