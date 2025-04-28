@@ -25,6 +25,7 @@
           >
             Dodaj smještaj
           </router-link>
+          <WalletConnect />
         </div>
       </div>
     </section>
@@ -75,7 +76,9 @@
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import WalletConnect from "@/components/WalletConnect.vue";
+</script>
 
 <style scoped>
 /* Hero Section */
