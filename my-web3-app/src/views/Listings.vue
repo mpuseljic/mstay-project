@@ -88,7 +88,6 @@
 <script setup>
 import { ref } from "vue";
 
-// Mock podaci za oglase
 const listings = ref([
   {
     id: 1,
@@ -126,24 +125,25 @@ const filterListings = () => {
     const locationMatch = listing.location
       .toLowerCase()
       .includes(searchLocation.value.toLowerCase());
-    // Za sad ignoriramo datume jer nemamo pravu dostupnost
     return locationMatch;
   });
 };
 </script>
 
 <style scoped>
-/* Search Section */
 .search-section {
   background: #e9effd;
 }
 
-/* Listings */
 .card-title {
   font-family: "Poppins", sans-serif;
 }
 
 .card-text {
   font-family: "Open Sans", sans-serif;
+}
+.text-primary {
+  --bs-text-opacity: 1;
+  color: rgb(8 54 55) !important;
 }
 </style>

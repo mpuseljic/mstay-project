@@ -75,9 +75,7 @@
   </div>
 </template>
 
-<script setup>
-// zasad nema posebne logike
-</script>
+<script setup></script>
 
 <style scoped>
 /* Hero Section */
@@ -108,7 +106,7 @@
 
 /* About Section */
 .about-section {
-  background: #e9effd; /* light blue-gray */
+  background: #e9effd;
 }
 
 /* CTA Section */
