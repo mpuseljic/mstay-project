@@ -1,38 +1,43 @@
 <template>
   <div class="listings-page">
     <!-- Search Section -->
-    <section class="search-section py-5 bg-light">
+    <section class="search-section py-5">
       <div class="container">
-        <div class="row g-3 align-items-center">
-          <div class="col-md-4">
-            <input
-              v-model="searchLocation"
-              type="text"
-              class="form-control form-control-lg rounded-3"
-              placeholder="Upiši lokaciju (npr. Zagreb)"
-            />
-          </div>
-          <div class="col-md-3">
-            <input
-              v-model="checkIn"
-              type="date"
-              class="form-control form-control-lg rounded-3"
-            />
-          </div>
-          <div class="col-md-3">
-            <input
-              v-model="checkOut"
-              type="date"
-              class="form-control form-control-lg rounded-3"
-            />
-          </div>
-          <div class="col-md-2">
-            <button
-              class="btn btn-primary btn-lg w-100 rounded-pill"
-              @click="filterListings"
-            >
-              Traži
-            </button>
+        <div class="search-box shadow p-4 rounded-4 bg-white">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Lokacija</label>
+              <input
+                v-model="searchLocation"
+                type="text"
+                class="form-control form-control-lg rounded-3"
+                placeholder="Npr. Zagreb"
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Dolazak</label>
+              <input
+                v-model="checkIn"
+                type="date"
+                class="form-control form-control-lg rounded-3"
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Odlazak</label>
+              <input
+                v-model="checkOut"
+                type="date"
+                class="form-control form-control-lg rounded-3"
+              />
+            </div>
+            <div class="col-md-2">
+              <button
+                class="btn btn-dark btn-lg w-100 rounded-pill"
+                @click="filterListings"
+              >
+                🔍 Traži
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -142,7 +147,12 @@ onMounted(() => {
 
 <style scoped>
 .search-section {
-  background: #e9effd;
+  background: linear-gradient(to right, #dbeafe, #e0f2fe);
+}
+
+.search-box {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
 }
 
 .card-title {
