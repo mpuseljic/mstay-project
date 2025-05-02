@@ -48,7 +48,7 @@
       <h2
         class="text-center mb-5 fw-bold text-primary animate__animated animate__fadeIn"
       >
-        Dostupni smještaji
+        🏡 Dostupni smještaji
       </h2>
 
       <div v-if="filteredListings.length" class="row g-4">
@@ -58,7 +58,7 @@
           class="col-md-4"
         >
           <div
-            class="card h-100 shadow-sm border-0 rounded-4 animate__animated animate__fadeInUp"
+            class="card listing-card h-100 border-0 rounded-4 shadow-sm animate__animated animate__fadeInUp"
           >
             <img
               :src="listing.image"
@@ -68,13 +68,15 @@
             />
             <div class="card-body d-flex flex-column">
               <h5 class="card-title fw-bold">{{ listing.title }}</h5>
-              <p class="card-text text-muted">{{ listing.location }}</p>
-              <p class="card-text">{{ listing.description }}</p>
-              <p class="card-text text-primary fw-bold">
+              <p class="card-text text-muted mb-1">
+                <i class="bi bi-geo-alt"></i> {{ listing.location }}
+              </p>
+              <p class="card-text small">{{ listing.description }}</p>
+              <p class="card-text text-primary fw-semibold mb-3">
                 {{ listing.pricePerNight }} ETH / noćenje
               </p>
               <div class="mt-auto">
-                <button class="btn btn-outline-primary w-100 rounded-pill">
+                <button class="btn btn-outline-dark w-100 rounded-pill">
                   Rezerviraj
                 </button>
               </div>
@@ -157,13 +159,31 @@ onMounted(() => {
 
 .card-title {
   font-family: "Poppins", sans-serif;
+  font-size: 1.25rem;
 }
 
 .card-text {
   font-family: "Open Sans", sans-serif;
 }
+
 .text-primary {
-  --bs-text-opacity: 1;
-  color: rgb(8 54 55) !important;
+  color: #0d6efd !important;
+}
+
+.listing-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.listing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07);
+}
+
+.btn-outline-dark {
+  border-color: #0d6efd;
+  color: #0d6efd;
+}
+.btn-outline-dark:hover {
+  background-color: #0d6efd;
+  color: white;
 }
 </style>
