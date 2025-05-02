@@ -86,39 +86,45 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { ethers } from "ethers";
+import mStayJson from "@/contracts/mStay.json";
 
-const listings = ref([
-  {
-    id: 1,
-    title: "Apartman u Zagrebu",
-    location: "Zagreb",
-    description: "Moderan apartman blizu centra.",
-    pricePerNight: 0.05,
-    image: "/listing1.jpg",
-  },
-  {
-    id: 2,
-    title: "Vila uz more",
-    location: "Split",
-    description: "Luksuzna vila s privatnim bazenom.",
-    pricePerNight: 0.1,
-    image: "/listing2.jpg",
-  },
-  {
-    id: 3,
-    title: "Kuća na selu",
-    location: "Osijek",
-    description: "Mirna kuća okružena prirodom.",
-    pricePerNight: 0.03,
-    image: "/listing3.jpg",
-  },
-]);
+const listings = ref([]);
 
 const searchLocation = ref("");
 const checkIn = ref("");
 const checkOut = ref("");
-const filteredListings = ref([...listings.value]);
+const filteredListings = ref([]);
+
+const loadListings = async () => {
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+
+    const contract = new ethers.Contract(
+      contractAddress,
+      mStayJson.abi,
+      provider
+    );
+
+    const allListings = await contract.getAllListings();
+    console.log("🧾 Sve iz smart contracta:", allListings);
+
+    listings.value = allListings.map((l) => ({
+      id: Number(l[0]),
+      title: l[2],
+      location: l[3],
+      description: l[4],
+      pricePerNight: ethers.utils.formatEther(l[5]),
+      image: l[6]?.[0] || "/hero.jpg",
+    }));
+
+    filteredListings.value = [...listings.value];
+  } catch (err) {
+    console.error("Greška prilikom dohvaćanja oglasa:", err);
+  }
+};
 
 const filterListings = () => {
   filteredListings.value = listings.value.filter((listing) => {
@@ -128,6 +134,10 @@ const filterListings = () => {
     return locationMatch;
   });
 };
+
+onMounted(() => {
+  loadListings();
+});
 </script>
 
 <style scoped>
