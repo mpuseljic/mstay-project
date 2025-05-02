@@ -62,37 +62,23 @@
             <label class="form-label fw-semibold"
               >Dodaj slike smještaja (max 10)</label
             >
-            <input
-              type="file"
-              class="form-control form-control-lg rounded-3"
-              accept="image/*"
-              multiple
-              @change="onFilesChange"
-              :disabled="images.length >= 10"
-            />
-          </div>
-          <div v-if="imagePreviews.length" class="row g-3 mb-4">
-            <div
-              v-for="(img, index) in imagePreviews"
-              :key="index"
-              class="col-6 col-md-4 position-relative"
-            >
-              <img
-                :src="img"
-                alt="Preview slike"
-                class="img-fluid rounded-4 shadow-sm"
-                style="height: 200px; object-fit: cover"
+            <div v-for="(url, index) in imageUrls" :key="index" class="mb-3">
+              <input
+                v-model="imageUrls[index]"
+                type="text"
+                class="form-control"
+                placeholder="https://..."
               />
-              <button
-                class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-pill"
-                @click="removeImage(index)"
-                title="Ukloni sliku"
-              >
-                &times;
-              </button>
             </div>
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-sm rounded-pill"
+              @click="addImageUrl"
+              :disabled="imageUrls.length >= 10"
+            >
+              Dodaj sliku
+            </button>
           </div>
-
           <div class="d-grid">
             <button
               type="submit"
@@ -109,14 +95,20 @@
 
 <script setup>
 import { ref } from "vue";
+import { ethers } from "ethers";
+import mStayJson from "@/contracts/mStay.json";
 
 const title = ref("");
 const location = ref("");
 const description = ref("");
 const price = ref("");
-const image = ref("");
-const images = ref([]);
-const imagePreviews = ref([]);
+const imageUrls = ref([""]);
+
+const addImageUrl = () => {
+  if (imageUrls.value.length < 10) {
+    imageUrls.value.push("");
+  }
+};
 
 const onFilesChange = (e) => {
   const files = Array.from(e.target.files);
@@ -135,21 +127,38 @@ const removeImage = (index) => {
   imagePreviews.value.splice(index, 1);
 };
 
-const submitListing = () => {
-  alert(`
-      Novi oglas dodan:
-      Naslov: ${title.value}
-      Lokacija: ${location.value}
-      Opis: ${description.value}
-      Cijena: ${price.value} ETH
-      Slika: ${image.value}
-    `);
+const submitListing = async () => {
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
 
-  title.value = "";
-  location.value = "";
-  description.value = "";
-  price.value = "";
-  image.value = "";
+    const contract = new ethers.Contract(
+      contractAddress,
+      mStayJson.abi,
+      signer
+    );
+
+    const tx = await contract.createListing(
+      title.value,
+      location.value,
+      description.value,
+      ethers.utils.parseEther(price.value.toString()),
+      imageUrls.value.filter((url) => url.trim() !== "")
+    );
+
+    await tx.wait();
+    alert("Oglas uspješno kreiran!");
+
+    title.value = "";
+    location.value = "";
+    description.value = "";
+    price.value = "";
+    imageUrls.value = [""];
+  } catch (err) {
+    console.error("Greška kod kreiranja oglasa:", err);
+    alert("Greška pri kreiranju oglasa");
+  }
 };
 </script>
 
