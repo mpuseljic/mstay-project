@@ -76,7 +76,10 @@
                 {{ listing.pricePerNight }} ETH / noćenje
               </p>
               <div class="mt-auto">
-                <button class="btn btn-outline-dark w-100 rounded-pill">
+                <button
+                  class="btn btn-outline-dark w-100 rounded-pill"
+                  @click="reserve(listing)"
+                >
                   Rezerviraj
                 </button>
               </div>
@@ -96,13 +99,15 @@
 import { ref, onMounted } from "vue";
 import { ethers } from "ethers";
 import mStayJson from "@/contracts/mStay.json";
+import { useToast } from "vue-toastification";
 
 const listings = ref([]);
-
 const searchLocation = ref("");
 const checkIn = ref("");
 const checkOut = ref("");
 const filteredListings = ref([]);
+const toast = useToast();
+const userAddress = ref("");
 
 const loadListings = async () => {
   try {
@@ -120,6 +125,7 @@ const loadListings = async () => {
 
     listings.value = allListings.map((l) => ({
       id: Number(l[0]),
+      owner: l[1],
       title: l[2],
       location: l[3],
       description: l[4],
@@ -142,8 +148,59 @@ const filterListings = () => {
   });
 };
 
-onMounted(() => {
-  loadListings();
+const reserve = async (listing) => {
+  if (listing.owner.toLowerCase() === userAddress.value.toLowerCase()) {
+    toast.error("Ne možete rezervirati vlastiti oglas!");
+    return;
+  }
+
+  if (!checkIn.value || !checkOut.value) {
+    toast.warning("Molimo odaberite datume dolaska i odlaska.");
+    return;
+  }
+
+  const inDate = Math.floor(new Date(checkIn.value).getTime() / 1000);
+  const outDate = Math.floor(new Date(checkOut.value).getTime() / 1000);
+  const nights = (outDate - inDate) / 86400;
+
+  if (nights < 1) {
+    toast.error("Datum odlaska mora biti nakon dolaska.");
+    return;
+  }
+
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+
+    const contract = new ethers.Contract(
+      contractAddress,
+      mStayJson.abi,
+      signer
+    );
+
+    const priceInEth = ethers.utils.parseEther(
+      listing.pricePerNight.toString()
+    );
+    const total = priceInEth.mul(nights);
+
+    const tx = await contract.makeReservation(listing.id, inDate, outDate, {
+      value: total,
+    });
+
+    await tx.wait();
+    toast.success("✅ Rezervacija uspješna!");
+  } catch (err) {
+    console.error(err);
+    toast.error("❌ Greška kod rezervacije.");
+  }
+};
+
+onMounted(async () => {
+  await loadListings();
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+  const signer = provider.getSigner();
+  userAddress.value = await signer.getAddress();
 });
 </script>
 
