@@ -5,14 +5,12 @@
       class="container d-flex justify-content-center align-items-center min-vh-100"
     >
       <div
-        class="card p-5 shadow-lg border-0 rounded-4 glass-effect animate__animated animate__fadeInUp"
+        class="listing-form shadow-lg rounded-5 bg-white p-5 animate__animated animate__fadeInUp"
       >
-        <h2 class="text-center mb-5 fw-bold text-primary">
-          Dodaj Novi Smještaj
-        </h2>
-        <form @submit.prevent="submitListing">
+        <h2 class="text-center mb-4 fw-bold text-dark">📌 Novi oglas</h2>
+        <form @submit.prevent="submitListing" class="needs-validation">
           <div class="mb-4">
-            <label class="form-label fw-semibold">Naslov smještaja</label>
+            <label class="form-label fw-semibold">📍 Naslov smještaja</label>
             <input
               v-model="title"
               type="text"
@@ -23,7 +21,7 @@
           </div>
 
           <div class="mb-4">
-            <label class="form-label fw-semibold">Lokacija</label>
+            <label class="form-label fw-semibold">🌍 Lokacija</label>
             <input
               v-model="location"
               type="text"
@@ -34,7 +32,7 @@
           </div>
 
           <div class="mb-4">
-            <label class="form-label fw-semibold">Opis</label>
+            <label class="form-label fw-semibold">📝 Opis</label>
             <textarea
               v-model="description"
               class="form-control form-control-lg rounded-3"
@@ -46,7 +44,7 @@
 
           <div class="mb-4">
             <label class="form-label fw-semibold"
-              >Cijena po noćenju (ETH)</label
+              >💰 Cijena po noćenju (ETH)</label
             >
             <input
               v-model="price"
@@ -60,31 +58,32 @@
 
           <div class="mb-4">
             <label class="form-label fw-semibold"
-              >Dodaj slike smještaja (max 10)</label
+              >🖼️ Linkovi slika (max 10)</label
             >
-            <div v-for="(url, index) in imageUrls" :key="index" class="mb-3">
+            <div v-for="(url, index) in imageUrls" :key="index" class="mb-2">
               <input
                 v-model="imageUrls[index]"
                 type="text"
-                class="form-control"
-                placeholder="https://..."
+                class="form-control rounded-3"
+                placeholder="https://example.com/slika.jpg"
               />
             </div>
             <button
               type="button"
-              class="btn btn-outline-primary btn-sm rounded-pill"
+              class="btn btn-outline-secondary btn-sm rounded-pill"
               @click="addImageUrl"
               :disabled="imageUrls.length >= 10"
             >
-              Dodaj sliku
+              ➕ Dodaj još sliku
             </button>
           </div>
-          <div class="d-grid">
+
+          <div class="d-grid mt-4">
             <button
               type="submit"
-              class="btn btn-primary btn-lg rounded-pill shadow"
+              class="btn btn-dark btn-lg rounded-pill shadow"
             >
-              Objavi Oglas
+              🚀 Objavi oglas
             </button>
           </div>
         </form>
@@ -97,6 +96,8 @@
 import { ref } from "vue";
 import { ethers } from "ethers";
 import mStayJson from "@/contracts/mStay.json";
+import { useToast } from "vue-toastification";
+const toast = useToast();
 
 const title = ref("");
 const location = ref("");
@@ -148,7 +149,7 @@ const submitListing = async () => {
     );
 
     await tx.wait();
-    alert("Oglas uspješno kreiran!");
+    toast.success("✅ Oglas uspješno kreiran!");
 
     title.value = "";
     location.value = "";
@@ -157,7 +158,7 @@ const submitListing = async () => {
     imageUrls.value = [""];
   } catch (err) {
     console.error("Greška kod kreiranja oglasa:", err);
-    alert("Greška pri kreiranju oglasa");
+    toast.error("❌ Greška pri kreiranju oglasa.");
   }
 };
 </script>
@@ -165,7 +166,7 @@ const submitListing = async () => {
 <style scoped>
 .add-listing-page {
   position: relative;
-  background: url("/hero.jpg") center center / cover no-repeat;
+  background: linear-gradient(to right, #dbeafe, #e0f2fe);
   width: 100%;
   min-height: 100vh;
   overflow: hidden;
@@ -177,25 +178,18 @@ const submitListing = async () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(13, 13, 13, 0.3);
   z-index: 0;
 }
 
-.glass-effect {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.listing-form {
+  position: relative;
   z-index: 1;
-}
-
-.card {
+  max-width: 700px;
   width: 100%;
-  max-width: 600px;
-}
-
-h2 {
-  font-family: "Poppins", sans-serif;
+  border-radius: 1.5rem;
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
 }
 
 form {
@@ -204,11 +198,29 @@ form {
 
 input,
 textarea {
-  background: rgba(255, 255, 255, 0.8);
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+  transition: all 0.2s ease-in-out;
 }
 
-.text-primary {
-  --bs-text-opacity: 1;
-  color: rgb(8 54 55) !important;
+input:focus,
+textarea:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-dark {
+  background-color: #083637;
+  border-color: #083637;
+}
+.btn-dark:hover {
+  background-color: #0a4d4e;
+  border-color: #0a4d4e;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #e2e8f0;
+  color: #000;
 }
 </style>
