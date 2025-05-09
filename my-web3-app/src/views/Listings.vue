@@ -78,9 +78,14 @@
               <div class="mt-auto">
                 <button
                   class="btn btn-outline-dark w-100 rounded-pill"
+                  :disabled="isListingReserved(listing.id)"
                   @click="reserve(listing)"
                 >
-                  Rezerviraj
+                  {{
+                    isListingReserved(listing.id)
+                      ? "Zauzeto u odabranom periodu"
+                      : "Rezerviraj"
+                  }}
                 </button>
               </div>
             </div>
@@ -108,6 +113,7 @@ const checkOut = ref("");
 const filteredListings = ref([]);
 const toast = useToast();
 const userAddress = ref("");
+const reservations = ref([]);
 
 const loadListings = async () => {
   try {
@@ -121,6 +127,7 @@ const loadListings = async () => {
     );
 
     const allListings = await contract.getAllListings();
+    const allReservations = await contract.getAllReservations();
     console.log("🧾 Sve iz smart contracta:", allListings);
 
     listings.value = allListings.map((l) => ({
@@ -146,6 +153,42 @@ const filterListings = () => {
       .includes(searchLocation.value.toLowerCase());
     return locationMatch;
   });
+};
+
+const isListingReserved = (listingId) => {
+  if (!checkIn.value || !checkOut.value) return false;
+  const inDate = new Date(checkIn.value).getTime() / 1000;
+  const outDate = new Date(checkOut.value).getTime() / 1000;
+
+  return reservations.value.some(
+    (r) =>
+      r.listingId === listingId &&
+      Math.max(r.checkIn, inDate) < Math.min(r.checkOut, outDate)
+  );
+};
+
+const loadReservations = async () => {
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+
+    const contract = new ethers.Contract(
+      contractAddress,
+      mStayJson.abi,
+      provider
+    );
+
+    const allReservations = await contract.getAllReservations();
+    reservations.value = allReservations.map((r) => ({
+      id: Number(r.id),
+      guest: r.guest,
+      listingId: Number(r.listingId),
+      checkIn: Number(r.checkInDate),
+      checkOut: Number(r.checkOutDate),
+    }));
+  } catch (err) {
+    console.error("Greška prilikom dohvaćanja rezervacija:", err);
+  }
 };
 
 const reserve = async (listing) => {
@@ -198,6 +241,7 @@ const reserve = async (listing) => {
 
 onMounted(async () => {
   await loadListings();
+  await loadReservations();
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = provider.getSigner();
   userAddress.value = await signer.getAddress();
@@ -242,5 +286,13 @@ onMounted(async () => {
 .btn-outline-dark:hover {
   background-color: #0d6efd;
   color: white;
+}
+
+button:disabled {
+  background-color: #ccc !important;
+  color: #666 !important;
+  border-color: #ccc !important;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 </style>

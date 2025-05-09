@@ -58,6 +58,7 @@ contract mStay {
         return allListings;
     }
 
+
     function makeReservation(
         uint _listingId,
         uint _checkInDate,
@@ -79,5 +80,12 @@ contract mStay {
         listing.owner.transfer(msg.value);
 
         emit ReservationMade(reservationCount, msg.sender, _listingId);
+    }
+        function getAllReservations() public view returns (Reservation[] memory) {
+        Reservation[] memory allReservations = new Reservation[](reservationCount);
+        for (uint i = 1; i <= reservationCount; i++) {
+            allReservations[i - 1] = reservations[i];
+        }
+        return allReservations;
     }
 }
