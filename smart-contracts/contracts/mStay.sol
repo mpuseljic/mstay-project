@@ -88,4 +88,13 @@ contract mStay {
         }
         return allReservations;
     }
+
+    function cancelReservation(uint _reservationId) public {
+    Reservation memory r = reservations[_reservationId];
+    require(r.id != 0, "Rezervacija ne postoji.");
+    require(r.guest == msg.sender, "Niste vlasnik rezervacije.");
+
+    delete reservations[_reservationId];
+}
+
 }

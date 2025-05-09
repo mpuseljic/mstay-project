@@ -23,6 +23,9 @@
           <router-link to="/add-listing" class="custom-btn outline">
             ➕ Dodaj smještaj
           </router-link>
+          <router-link to="/my-reservations" class="custom-btn outline">
+            🗓️ Moje rezervacije
+          </router-link>
         </div>
       </div>
     </section>
