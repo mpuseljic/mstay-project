@@ -40,6 +40,18 @@
             </div>
           </div>
         </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Sortiraj</label>
+          <select
+            v-model="sortOption"
+            class="form-select form-select-lg rounded-3"
+            @change="filterListings"
+          >
+            <option value="">Bez sortiranja</option>
+            <option value="asc">Cijena: Najniža</option>
+            <option value="desc">Cijena: Najviša</option>
+          </select>
+        </div>
       </div>
     </section>
 
@@ -114,6 +126,7 @@ const filteredListings = ref([]);
 const toast = useToast();
 const userAddress = ref("");
 const reservations = ref([]);
+const sortOption = ref("");
 
 const loadListings = async () => {
   try {
@@ -147,12 +160,40 @@ const loadListings = async () => {
 };
 
 const filterListings = () => {
-  filteredListings.value = listings.value.filter((listing) => {
+  let result = listings.value.filter((listing) => {
     const locationMatch = listing.location
       .toLowerCase()
       .includes(searchLocation.value.toLowerCase());
-    return locationMatch;
+
+    const inDate = checkIn.value
+      ? new Date(checkIn.value).getTime() / 1000
+      : null;
+    const outDate = checkOut.value
+      ? new Date(checkOut.value).getTime() / 1000
+      : null;
+
+    const available = !reservations.value.some(
+      (r) =>
+        r.listingId === listing.id &&
+        inDate &&
+        outDate &&
+        Math.max(r.checkIn, inDate) < Math.min(r.checkOut, outDate)
+    );
+
+    return locationMatch && (!inDate || !outDate || available);
   });
+
+  if (sortOption.value === "asc") {
+    result.sort(
+      (a, b) => parseFloat(a.pricePerNight) - parseFloat(b.pricePerNight)
+    );
+  } else if (sortOption.value === "desc") {
+    result.sort(
+      (a, b) => parseFloat(b.pricePerNight) - parseFloat(a.pricePerNight)
+    );
+  }
+
+  filteredListings.value = result;
 };
 
 const isListingReserved = (listingId) => {
@@ -294,5 +335,9 @@ button:disabled {
   border-color: #ccc !important;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+.form-label {
+  margin-top: 10px;
 }
 </style>
