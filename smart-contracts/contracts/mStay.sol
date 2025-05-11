@@ -97,4 +97,10 @@ contract mStay {
     delete reservations[_reservationId];
 }
 
+function deleteListing(uint _listingId) public {
+    Listing memory listing = listings[_listingId];
+    require(listing.owner == msg.sender, "Niste vlasnik oglasa.");
+    delete listings[_listingId];
+}
+
 }

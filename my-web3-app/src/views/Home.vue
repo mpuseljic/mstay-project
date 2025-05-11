@@ -4,6 +4,7 @@
     <div class="wallet-button-container">
       <WalletConnect @wallet-connected="handleWalletConnected" />
     </div>
+
     <Toast ref="toastRef" />
     <section class="hero d-flex align-items-center text-white text-center">
       <div class="overlay"></div>
@@ -25,6 +26,9 @@
           </router-link>
           <router-link to="/my-reservations" class="custom-btn outline">
             🗓️ Moje rezervacije
+          </router-link>
+          <router-link to="/my-listings" class="custom-btn outline">
+            📂 Moji oglasi
           </router-link>
         </div>
       </div>

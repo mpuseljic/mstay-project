@@ -13,6 +13,11 @@ const routes = [
     name: "MyReservations",
     component: MyReservations,
   },
+  {
+    path: "/my-listings",
+    name: "MyListings",
+    component: () => import("../views/MyListings.vue"),
+  },
 ];
 
 const router = createRouter({
