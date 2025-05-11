@@ -30,6 +30,7 @@
                 class="form-control form-control-lg rounded-3"
               />
             </div>
+
             <div class="col-md-2">
               <button
                 class="btn btn-dark btn-lg w-100 rounded-pill"
@@ -39,6 +40,29 @@
               </button>
             </div>
           </div>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Min. cijena (ETH)</label>
+          <input
+            v-model.number="minPrice"
+            type="number"
+            step="0.01"
+            class="form-control form-control-lg rounded-3"
+            placeholder="npr. 0.01"
+            @change="filterListings"
+          />
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Max. cijena (ETH)</label>
+          <input
+            v-model.number="maxPrice"
+            type="number"
+            step="0.01"
+            class="form-control form-control-lg rounded-3"
+            placeholder="npr. 0.10"
+            @change="filterListings"
+          />
         </div>
         <div class="col-md-2">
           <label class="form-label fw-semibold">Sortiraj</label>
@@ -127,6 +151,8 @@ const toast = useToast();
 const userAddress = ref("");
 const reservations = ref([]);
 const sortOption = ref("");
+const minPrice = ref(null);
+const maxPrice = ref(null);
 
 const loadListings = async () => {
   try {
@@ -165,6 +191,11 @@ const filterListings = () => {
       .toLowerCase()
       .includes(searchLocation.value.toLowerCase());
 
+    const priceMatch =
+      (!minPrice.value ||
+        parseFloat(listing.pricePerNight) >= minPrice.value) &&
+      (!maxPrice.value || parseFloat(listing.pricePerNight) <= maxPrice.value);
+
     const inDate = checkIn.value
       ? new Date(checkIn.value).getTime() / 1000
       : null;
@@ -180,7 +211,7 @@ const filterListings = () => {
         Math.max(r.checkIn, inDate) < Math.min(r.checkOut, outDate)
     );
 
-    return locationMatch && (!inDate || !outDate || available);
+    return locationMatch && priceMatch && (!inDate || !outDate || available);
   });
 
   if (sortOption.value === "asc") {
