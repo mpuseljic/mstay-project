@@ -7,6 +7,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "animate.css";
 import "vue-toastification/dist/index.css";
 import Toast from "vue-toastification";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 const toastOptions = {
   position: "top-right",

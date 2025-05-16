@@ -22,12 +22,20 @@
                 🗓️ {{ formatDate(reservation.checkIn) }} -
                 {{ formatDate(reservation.checkOut) }}
               </p>
-              <button
-                class="btn btn-outline-danger btn-sm"
-                @click="cancelReservation(reservation.id)"
-              >
-                ❌ Otkaži rezervaciju
-              </button>
+              <div class="d-flex justify-content-between mt-3">
+                <button
+                  class="btn btn-outline-danger btn-sm w-50 me-2"
+                  @click="cancelReservation(reservation.id)"
+                >
+                  ❌ Otkaži
+                </button>
+                <button
+                  class="btn btn-outline-primary btn-sm w-50"
+                  @click="openReviewModal(reservation.listingId)"
+                >
+                  ✍️ Recenzija
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -35,6 +43,11 @@
       <div v-else class="text-center text-muted mt-5">
         <h4>⛔ Trenutno nemate nijednu rezervaciju.</h4>
       </div>
+      <ReviewModal
+        :listingId="selectedListingId"
+        :show="showReviewModal"
+        @close="showReviewModal = false"
+      />
     </div>
   </div>
 </template>
@@ -44,10 +57,18 @@ import { ref, onMounted } from "vue";
 import { ethers } from "ethers";
 import mStayJson from "@/contracts/mStay.json";
 import { useToast } from "vue-toastification";
+import ReviewModal from "@/components/ReviewModal.vue";
 
 const toast = useToast();
 
 const userReservations = ref([]);
+const selectedListingId = ref(null);
+const showReviewModal = ref(false);
+
+const openReviewModal = (id) => {
+  selectedListingId.value = id;
+  showReviewModal.value = true;
+};
 
 const formatDate = (timestamp) => {
   const date = new Date(timestamp * 1000);

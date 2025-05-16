@@ -20,11 +20,19 @@ contract mStay {
         uint checkOutDate;
     }
 
+    struct Review {
+    address reviewer;
+    uint listingId;
+    uint8 rating; // 1–5
+    string comment;
+}
+
     uint public listingCount;
     uint public reservationCount;
 
     mapping(uint => Listing) public listings;
     mapping(uint => Reservation) public reservations;
+    mapping(uint => Review[]) public listingReviews;
 
     event ListingCreated(uint id, address owner, string title);
     event ReservationMade(uint id, address guest, uint listingId);
@@ -102,5 +110,28 @@ function deleteListing(uint _listingId) public {
     require(listing.owner == msg.sender, "Niste vlasnik oglasa.");
     delete listings[_listingId];
 }
+
+function leaveReview(uint _listingId, uint8 _rating, string memory _comment) public {
+    require(_rating >= 1 && _rating <= 5, "Rating mora biti 1-5");
+    bool hasReservation = false;
+
+    for (uint i = 1; i <= reservationCount; i++) {
+        if (
+            reservations[i].listingId == _listingId &&
+            reservations[i].guest == msg.sender
+        ) {
+            hasReservation = true;
+            break;
+        }
+    }
+
+    require(hasReservation, "Niste rezervirali ovaj objekt.");
+    listingReviews[_listingId].push(Review(msg.sender, _listingId, _rating, _comment));
+}
+
+function getReviewsForListing(uint _listingId) public view returns (Review[] memory) {
+    return listingReviews[_listingId];
+}
+
 
 }

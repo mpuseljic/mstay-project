@@ -125,6 +125,32 @@
                 </button>
               </div>
             </div>
+            <!-- Reviews prikaz -->
+            <div
+              v-if="listingReviews[listing.id]?.length"
+              class="px-4 pb-3 pt-2 border-top bg-light-subtle"
+            >
+              <h6 class="fw-semibold mb-2 text-dark">🌟 Recenzije</h6>
+              <div
+                v-for="(review, index) in listingReviews[listing.id]"
+                :key="index"
+                class="mb-3 pb-2 border-bottom"
+              >
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <span
+                    v-for="i in 5"
+                    :key="i"
+                    class="fs-6"
+                    :class="i <= review.rating ? 'text-warning' : 'text-muted'"
+                  >
+                    <i class="fas fa-star"></i>
+                  </span>
+                </div>
+                <p class="mb-0 text-muted small fst-italic">
+                  "{{ review.comment }}"
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -153,6 +179,33 @@ const reservations = ref([]);
 const sortOption = ref("");
 const minPrice = ref(null);
 const maxPrice = ref(null);
+const listingReviews = ref({});
+
+const loadReviews = async () => {
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+  const contract = new ethers.Contract(
+    import.meta.env.VITE_CONTRACT_ADDRESS,
+    mStayJson.abi,
+    provider
+  );
+
+  const reviewsByListing = {};
+  for (const listing of listings.value) {
+    try {
+      const reviews = await contract.getReviewsForListing(listing.id);
+
+      reviewsByListing[listing.id] = reviews.map((r) => ({
+        reviewer: r.reviewer,
+        rating: Number(r.rating),
+        comment: r.comment,
+      }));
+    } catch (err) {
+      console.warn(`❌ Greška kod recenzija za oglas ${listing.id}`, err);
+    }
+  }
+
+  listingReviews.value = reviewsByListing;
+};
 
 const loadListings = async () => {
   try {
@@ -314,6 +367,7 @@ const reserve = async (listing) => {
 onMounted(async () => {
   await loadListings();
   await loadReservations();
+  await loadReviews();
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = provider.getSigner();
   userAddress.value = await signer.getAddress();
