@@ -1,80 +1,112 @@
 <template>
   <div class="listings-page">
     <!-- Search Section -->
-    <section class="search-section py-5">
-      <div class="container">
-        <div class="search-box shadow p-4 rounded-4 bg-white">
-          <div class="row g-3 align-items-end">
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Lokacija</label>
-              <input
-                v-model="searchLocation"
-                type="text"
-                class="form-control form-control-lg rounded-3"
-                placeholder="Npr. Zagreb"
-              />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-semibold">Dolazak</label>
-              <input
-                v-model="checkIn"
-                type="date"
-                class="form-control form-control-lg rounded-3"
-              />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-semibold">Odlazak</label>
-              <input
-                v-model="checkOut"
-                type="date"
-                class="form-control form-control-lg rounded-3"
-              />
-            </div>
+    <section class="py-5">
+      <div class="container d-flex justify-content-center">
+        <div class="custom-search-bar">
+          <!-- Destination -->
+          <div
+            class="search-item position-relative"
+            ref="locationDropdownWrapper"
+          >
+            <label>Kamo</label>
+            <input
+              type="text"
+              v-model="searchLocation"
+              placeholder="Pretražite odredišta"
+              @click="toggleLocationDropdown"
+              readonly
+              style="pointer-events: auto"
+            />
 
-            <div class="col-md-2">
-              <button
-                class="btn btn-dark btn-lg w-100 rounded-pill"
-                @click="filterListings"
+            <!-- Dropdown -->
+            <div
+              v-if="showLocationDropdown"
+              class="location-dropdown"
+              ref="locationDropdown"
+              @click.stop
+            >
+              <h6 class="dropdown-heading">Prijedlozi za putovanja</h6>
+
+              <div
+                v-for="(dest, index) in popularDestinations"
+                :key="index"
+                class="location-item"
+                @click="selectDestination(dest)"
               >
-                🔍 Traži
-              </button>
+                <div
+                  class="location-icon"
+                  :style="{ backgroundColor: dest.bg || '#f0f0f0' }"
+                >
+                  <i :class="dest.icon"></i>
+                </div>
+                <div class="location-text">
+                  <strong>{{ dest.name }}</strong>
+                  <div class="text-muted small">{{ dest.desc }}</div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="col-md-2">
-          <label class="form-label fw-semibold">Min. cijena (ETH)</label>
-          <input
-            v-model.number="minPrice"
-            type="number"
-            step="0.01"
-            class="form-control form-control-lg rounded-3"
-            placeholder="npr. 0.01"
-            @change="filterListings"
-          />
-        </div>
 
-        <div class="col-md-2">
-          <label class="form-label fw-semibold">Max. cijena (ETH)</label>
-          <input
-            v-model.number="maxPrice"
-            type="number"
-            step="0.01"
-            class="form-control form-control-lg rounded-3"
-            placeholder="npr. 0.10"
-            @change="filterListings"
-          />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label fw-semibold">Sortiraj</label>
-          <select
-            v-model="sortOption"
-            class="form-select form-select-lg rounded-3"
-            @change="filterListings"
+          <!-- Check-in -->
+          <div class="search-item" ref="checkInRef">
+            <label>Dolazak</label>
+            <input type="date" v-model="checkIn" />
+          </div>
+
+          <!-- Check-out -->
+          <div class="search-item" ref="checkOutRef">
+            <label>Odlazak</label>
+            <input type="date" v-model="checkOut" />
+          </div>
+
+          <!-- Guests -->
+          <div
+            class="search-item position-relative"
+            ref="guestsDropdownWrapper"
+            @click="showGuestsDropdown = !showGuestsDropdown"
           >
-            <option value="">Bez sortiranja</option>
-            <option value="asc">Cijena: Najniža</option>
-            <option value="desc">Cijena: Najviša</option>
-          </select>
+            <label>Tko</label>
+            <input type="text" :value="totalGuests" readonly />
+
+            <div v-if="showGuestsDropdown" class="guests-dropdown" @click.stop>
+              <div
+                v-for="(label, key) in guestLabels"
+                :key="key"
+                class="guest-row"
+              >
+                <div class="guest-text">
+                  <div class="guest-label">{{ label }}</div>
+                  <div class="guest-desc">{{ getGuestDesc(key) }}</div>
+                </div>
+                <div class="guest-controls">
+                  <button
+                    class="round-btn"
+                    :disabled="guests[key] === 0"
+                    @click.stop="decrement(key)"
+                  >
+                    −
+                  </button>
+                  <span class="guest-count">{{ guests[key] }}</span>
+                  <button class="round-btn" @click.stop="increment(key)">
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div class="guest-helper-link mt-3">
+                <strong>Kućni ljubimci</strong><br />
+                <a href="#" class="text-decoration-underline small">
+                  S vama dolazi životinja pomagač?
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search button -->
+          <button class="search-button" @click="filterListings">
+            <i class="fas fa-search"></i>
+          </button>
         </div>
       </div>
     </section>
@@ -163,7 +195,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed, onBeforeUnmount } from "vue";
 import { ethers } from "ethers";
 import mStayJson from "@/contracts/mStay.json";
 import { useToast } from "vue-toastification";
@@ -180,6 +212,14 @@ const sortOption = ref("");
 const minPrice = ref(null);
 const maxPrice = ref(null);
 const listingReviews = ref({});
+const activeField = ref(null);
+const locationDropdownWrapper = ref(null);
+const locationDropdown = ref(null);
+const showLocationDropdown = ref(false);
+const showGuestsDropdown = ref(false);
+const checkInRef = ref(null);
+const checkOutRef = ref(null);
+const guestsDropdownWrapper = ref(null);
 
 const loadReviews = async () => {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -364,6 +404,131 @@ const reserve = async (listing) => {
   }
 };
 
+const popularDestinations = [
+  {
+    name: "U mojoj blizini",
+    desc: "Potražite sadržaje u svojoj blizini",
+    icon: "fas fa-location-arrow",
+    bg: "#e7f0fb",
+  },
+  {
+    name: "Budimpešta, Mađarska",
+    desc: "Zbog znamenitosti kao što je Ribarska tvrđava",
+    icon: "fas fa-landmark",
+    bg: "#e6f4ec",
+  },
+  {
+    name: "Split, Hrvatska",
+    desc: "Popularna destinacija na samoj obali",
+    icon: "fas fa-water",
+    bg: "#e7f0fb",
+  },
+  {
+    name: "Osijek, Hrvatska",
+    desc: "Za putovanje u inozemstvo",
+    icon: "fas fa-tree",
+    bg: "#eaf6e9",
+  },
+  {
+    name: "Rijeka, Hrvatska",
+    desc: "Zbog znamenitosti kao što je Trsatska gradina",
+    icon: "fas fa-ship",
+    bg: "#fdeef3",
+  },
+  {
+    name: "Beograd, Srbija",
+    desc: "Poznato po noćnoj zabavi",
+    icon: "fas fa-glass-cheers",
+    bg: "#fdecea",
+  },
+  {
+    name: "Zadar, Hrvatska",
+    desc: "Popularna destinacija na samoj obali",
+    icon: "fas fa-sun",
+    bg: "#fdecea",
+  },
+];
+
+const selectDestination = (destination) => {
+  searchLocation.value = destination.name;
+  showLocationDropdown.value = false;
+};
+const guests = ref({
+  adults: 2,
+  children: 0,
+  infants: 0,
+  pets: 0,
+});
+
+const guestLabels = {
+  adults: "Odrasli",
+  children: "Djeca",
+  infants: "Bebe",
+  pets: "Kućni ljubimci",
+};
+
+const getGuestDesc = (key) => {
+  switch (key) {
+    case "adults":
+      return "Najmanje 13 god.";
+    case "children":
+      return "2 – 12 god.";
+    case "infants":
+      return "Do 2 god.";
+    case "pets":
+      return "Primaju li ljubimce?";
+    default:
+      return "";
+  }
+};
+
+const totalGuests = computed(() => {
+  const a = guests.value.adults;
+  const c = guests.value.children;
+  const i = guests.value.infants;
+  const p = guests.value.pets;
+
+  const parts = [];
+  if (a + c > 0) parts.push(`${a + c} gost${a + c === 1 ? "" : "i"}`);
+  if (i > 0) parts.push(`${i} beba${i === 1 ? "" : "e"}`);
+  if (p > 0) parts.push(`${p} ljubimac${p === 1 ? "" : "a"}`);
+
+  return parts.length ? parts.join(", ") : "Dodaj goste";
+});
+
+const increment = (key) => {
+  guests.value[key]++;
+};
+const decrement = (key) => {
+  if (guests.value[key] > 0) guests.value[key]--;
+};
+
+const handleClickOutside = (event) => {
+  const locationEl = locationDropdownWrapper.value;
+  const guestsEl = guestsDropdownWrapper.value;
+
+  if (
+    showLocationDropdown.value &&
+    locationEl &&
+    !locationEl.contains(event.target)
+  ) {
+    showLocationDropdown.value = false;
+  }
+
+  if (
+    showGuestsDropdown.value &&
+    guestsEl &&
+    !guestsEl.contains(event.target)
+  ) {
+    showGuestsDropdown.value = false;
+  }
+};
+
+const toggleLocationDropdown = () => {
+  showLocationDropdown.value = !showLocationDropdown.value;
+  showGuestsDropdown.value = false;
+};
+
 onMounted(async () => {
   await loadListings();
   await loadReservations();
@@ -371,14 +536,17 @@ onMounted(async () => {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = provider.getSigner();
   userAddress.value = await signer.getAddress();
+  setTimeout(() => {
+    document.addEventListener("click", handleClickOutside);
+  }, 0);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside);
 });
 </script>
 
 <style scoped>
-.search-section {
-  background: linear-gradient(to right, #dbeafe, #e0f2fe);
-}
-
 .search-box {
   background: #ffffff;
   border: 1px solid #e0e0e0;
@@ -424,5 +592,261 @@ button:disabled {
 
 .form-label {
   margin-top: 10px;
+}
+
+.custom-search-bar {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border-radius: 999px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 1100px;
+  border: 1px solid #ddd;
+  position: relative;
+  z-index: 10;
+}
+
+.search-item {
+  min-width: 250px;
+  position: relative;
+}
+.search-item {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-right: 1px solid #eee;
+}
+
+.search-item:last-of-type {
+  border-right: none;
+}
+
+.search-item label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #717171;
+  margin-bottom: 4px;
+}
+
+.search-item input {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #222;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.search-item input::placeholder {
+  color: #aaa;
+}
+
+.active-capsule {
+  background-color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  padding: 10px 16px !important;
+  margin: -10px 0; /* vizualno poravna s ostalima */
+  z-index: 10;
+  border: 1px solid #ddd;
+}
+
+.search-item:hover {
+  background-color: #f9f9f9;
+  border-radius: 30px;
+  transition: background-color 0.2s ease;
+}
+
+.search-button {
+  background-color: #ff385c;
+  color: white;
+  border-radius: 50%;
+  padding: 14px;
+  border: none;
+  width: 48px;
+  height: 48px;
+  margin: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.search-button:hover {
+  background-color: #e03150;
+}
+
+.location-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 480px;
+  margin-top: 8px;
+  background-color: #fff;
+  border-radius: 20px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
+  padding: 24px;
+  z-index: 999;
+}
+
+.dropdown-heading {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.location-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.location-item:hover {
+  background-color: #f7f7f7;
+}
+
+.location-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #333;
+}
+
+.location-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.destination-item {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.destination-item:hover {
+  background-color: #f8f9fa;
+}
+
+.guests-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background-color: #fff;
+  border-radius: 20px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
+  padding: 24px;
+  z-index: 999;
+  width: 340px;
+}
+
+.guest-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.guest-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.guest-label {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.guest-desc {
+  font-size: 14px;
+  color: #717171;
+}
+
+.guest-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.round-btn {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #333;
+  transition: background 0.2s ease;
+}
+
+.round-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.round-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.guest-count {
+  font-size: 16px;
+  width: 18px;
+  text-align: center;
+}
+
+.guest-helper-link {
+  margin-top: 16px;
+}
+
+.guest-helper-link a {
+  color: #222;
+  font-size: 14px;
+}
+
+.min-width-2 {
+  width: 2rem;
+}
+
+.search-item {
+  padding-right: 1rem;
+  border-right: 1px solid #e0e0e0;
+}
+
+@media (max-width: 768px) {
+  .custom-search-bar {
+    flex-direction: column;
+    border-radius: 20px;
+  }
+
+  .search-item {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #eee;
+  }
+
+  .search-item:last-of-type {
+    border-bottom: none;
+  }
+
+  .search-button {
+    width: 100%;
+    border-radius: 0 0 20px 20px;
+  }
 }
 </style>
