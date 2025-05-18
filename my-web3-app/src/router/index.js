@@ -18,6 +18,12 @@ const routes = [
     name: "MyListings",
     component: () => import("../views/MyListings.vue"),
   },
+  {
+    path: "/listing/:id",
+    name: "ListingDetails",
+    component: () => import("../views/ListingDetails.vue"),
+    props: true,
+  },
 ];
 
 const router = createRouter({

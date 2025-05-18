@@ -1,10 +1,8 @@
 <template>
   <div class="listings-page">
-    <!-- Search Section -->
     <section class="py-5">
       <div class="container d-flex justify-content-center">
         <div class="custom-search-bar">
-          <!-- Destination -->
           <div
             class="search-item position-relative"
             ref="locationDropdownWrapper"
@@ -15,11 +13,8 @@
               v-model="searchLocation"
               placeholder="Pretražite odredišta"
               @click="toggleLocationDropdown"
-              readonly
               style="pointer-events: auto"
             />
-
-            <!-- Dropdown -->
             <div
               v-if="showLocationDropdown"
               class="location-dropdown"
@@ -29,7 +24,7 @@
               <h6 class="dropdown-heading">Prijedlozi za putovanja</h6>
 
               <div
-                v-for="(dest, index) in popularDestinations"
+                v-for="(dest, index) in filteredDestinations"
                 :key="index"
                 class="location-item"
                 @click="selectDestination(dest)"
@@ -48,19 +43,16 @@
             </div>
           </div>
 
-          <!-- Check-in -->
           <div class="search-item" ref="checkInRef">
             <label>Dolazak</label>
             <input type="date" v-model="checkIn" />
           </div>
 
-          <!-- Check-out -->
           <div class="search-item" ref="checkOutRef">
             <label>Odlazak</label>
             <input type="date" v-model="checkOut" />
           </div>
 
-          <!-- Guests -->
           <div
             class="search-item position-relative"
             ref="guestsDropdownWrapper"
@@ -103,7 +95,6 @@
             </div>
           </div>
 
-          <!-- Search button -->
           <button class="search-button" @click="filterListings">
             <i class="fas fa-search"></i>
           </button>
@@ -111,7 +102,6 @@
       </div>
     </section>
 
-    <!-- Listings Section -->
     <section class="container my-5">
       <h2
         class="text-center mb-5 fw-bold text-primary animate__animated animate__fadeIn"
@@ -127,6 +117,8 @@
         >
           <div
             class="card listing-card h-100 border-0 rounded-4 shadow-sm animate__animated animate__fadeInUp"
+            @click="goToDetails(listing.id)"
+            style="cursor: pointer"
           >
             <img
               :src="listing.image"
@@ -157,7 +149,7 @@
                 </button>
               </div>
             </div>
-            <!-- Reviews prikaz -->
+
             <div
               v-if="listingReviews[listing.id]?.length"
               class="px-4 pb-3 pt-2 border-top bg-light-subtle"
@@ -199,6 +191,7 @@ import { ref, onMounted, computed, onBeforeUnmount } from "vue";
 import { ethers } from "ethers";
 import mStayJson from "@/contracts/mStay.json";
 import { useToast } from "vue-toastification";
+import { useRouter } from "vue-router";
 
 const listings = ref([]);
 const searchLocation = ref("");
@@ -220,6 +213,11 @@ const showGuestsDropdown = ref(false);
 const checkInRef = ref(null);
 const checkOutRef = ref(null);
 const guestsDropdownWrapper = ref(null);
+const router = useRouter();
+
+const goToDetails = (id) => {
+  router.push(`/listing/${id}`);
+};
 
 const loadReviews = async () => {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -444,8 +442,92 @@ const popularDestinations = [
   {
     name: "Zadar, Hrvatska",
     desc: "Popularna destinacija na samoj obali",
-    icon: "fas fa-sun",
+    icon: "fas fa-water",
     bg: "#fdecea",
+  },
+  {
+    name: "Pula, Hrvatska",
+    desc: "Zbog znamenitosti kao što je Slavoluk Sergijevaca",
+    icon: "fas fa-tree",
+    bg: "#fdeef3",
+  },
+  {
+    name: "Ljubljana, Slovenija",
+    desc: "Zbog zadivljujuće arhitekture",
+    icon: "fas fa-tree",
+    bg: "#fdeef3",
+  },
+  {
+    name: "Pariz, Francuska",
+    desc: "Zbog vrhunske gastronomske ponude",
+    icon: "fas fa-wine-glass-alt",
+    bg: "#e7f0fb",
+  },
+  {
+    name: "Sarajevo, Bosna i Hercegovina",
+    desc: "Za putovanje u inozemstvo",
+    icon: "fas fa-city",
+    bg: "#f8f1ed",
+  },
+  {
+    name: "Barcelona, Španjolska",
+    desc: "Zbog znamenitosti kao što je Crkva Svete Obitelji",
+    icon: "fas fa-landmark",
+    bg: "#f8f0e9",
+  },
+  {
+    name: "Dubrovnik, Hrvatska",
+    desc: "Zbog zadivljujuće arhitekture",
+    icon: "fas fa-archway",
+    bg: "#fdecec",
+  },
+  {
+    name: "London, Ujedinjeno Kraljevstvo",
+    desc: "Poznato po noćnoj zabavi",
+    icon: "fas fa-city",
+    bg: "#ececec",
+  },
+  {
+    name: "Beč, Austrija",
+    desc: "Zbog vrhunske gastronomske ponude",
+    icon: "fas fa-utensils",
+    bg: "#ffe0f0",
+  },
+  {
+    name: "Šibenik, Hrvatska",
+    desc: "Za ljubitelje prirode",
+    icon: "fas fa-water",
+    bg: "#dff9fb",
+  },
+  {
+    name: "Prag, Češka",
+    desc: "Zbog znamenitosti kao što je Praški dvorac",
+    icon: "fas fa-chess-rook",
+    bg: "#fdeef3",
+  },
+  {
+    name: "Korčula, Hrvatska",
+    desc: "Za putovanje u inozemstvo",
+    icon: "fas fa-city",
+    bg: "#e7f0fb",
+  },
+  {
+    name: "Mostar, Bosna i Hercegovina",
+    desc: "Skriveni dragulj",
+    icon: "fas fa-tree",
+    bg: "#f4f1ee",
+  },
+  {
+    name: "Lisabon, Portugal",
+    desc: "Zbog znamenitosti kao što je Trg trgovine",
+    icon: "fas fa-landmark",
+    bg: "#ede7e3",
+  },
+  {
+    name: "Novi Sad, Srbija",
+    desc: "Za putovanje u inozemstvo",
+    icon: "fas fa-city",
+    bg: "#fdeef3",
   },
 ];
 
@@ -481,6 +563,14 @@ const getGuestDesc = (key) => {
       return "";
   }
 };
+
+const filteredDestinations = computed(() => {
+  if (!searchLocation.value.trim()) return popularDestinations;
+
+  return popularDestinations.filter((dest) =>
+    dest.name.toLowerCase().includes(searchLocation.value.toLowerCase())
+  );
+});
 
 const totalGuests = computed(() => {
   const a = guests.value.adults;
@@ -690,6 +780,9 @@ button:disabled {
   box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
   padding: 24px;
   z-index: 999;
+
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .dropdown-heading {
