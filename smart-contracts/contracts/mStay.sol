@@ -10,6 +10,7 @@ contract mStay {
         string description;
         uint pricePerNight;
         string[] images;
+        bool isActive;
     }
 
     struct Reservation {
@@ -52,19 +53,36 @@ contract mStay {
             _location,
             _description,
             _pricePerNight,
-            _images
+            _images,
+            true
         );
 
         emit ListingCreated(listingCount, msg.sender, _title);
     }
 
-    function getAllListings() public view returns (Listing[] memory) {
-        Listing[] memory allListings = new Listing[](listingCount);
-        for (uint i = 1; i <= listingCount; i++) {
-            allListings[i - 1] = listings[i];
+function getAllListings() public view returns (Listing[] memory) {
+    uint activeCount = 0;
+
+    // Prvo prebrojimo aktivne
+    for (uint i = 1; i <= listingCount; i++) {
+        if (listings[i].isActive) {
+            activeCount++;
         }
-        return allListings;
     }
+
+    Listing[] memory activeListings = new Listing[](activeCount);
+    uint index = 0;
+
+    for (uint i = 1; i <= listingCount; i++) {
+        if (listings[i].isActive) {
+            activeListings[index] = listings[i];
+            index++;
+        }
+    }
+
+    return activeListings;
+}
+
 
 
     function makeReservation(
@@ -106,10 +124,11 @@ contract mStay {
 }
 
 function deleteListing(uint _listingId) public {
-    Listing memory listing = listings[_listingId];
+    Listing storage listing = listings[_listingId];
     require(listing.owner == msg.sender, "Niste vlasnik oglasa.");
-    delete listings[_listingId];
+    listing.isActive = false;
 }
+
 
 function leaveReview(uint _listingId, uint8 _rating, string memory _comment) public {
     require(_rating >= 1 && _rating <= 5, "Rating mora biti 1-5");
