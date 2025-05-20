@@ -4,33 +4,31 @@
       <h2 class="fw-bold text-primary text-center mb-5">📂 Moji oglasi</h2>
 
       <div v-if="userListings.length" class="row g-4">
-        <template v-for="listing in userListings" :key="listing.id">
-          <div v-if="listing && listing.id" class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 rounded-4">
-              <img
-                :src="listing.image"
-                class="card-img-top rounded-top-4"
-                alt="slika"
-                style="height: 200px; object-fit: cover"
-              />
-              <div class="card-body">
-                <h5 class="card-title fw-bold">{{ listing.title }}</h5>
-                <p class="card-text text-muted">📍 {{ listing.location }}</p>
-                <p class="card-text">💬 {{ listing.description }}</p>
-                <p class="card-text text-primary fw-bold">
-                  {{ listing.pricePerNight }} ETH / noćenje
-                </p>
+        <div v-for="listing in userListings" :key="listing.id" class="col-md-4">
+          <div class="card h-100 shadow-sm border-0 rounded-4">
+            <img
+              :src="listing.image"
+              class="card-img-top rounded-top-4"
+              alt="slika"
+              style="height: 200px; object-fit: cover"
+            />
+            <div class="card-body">
+              <h5 class="card-title fw-bold">{{ listing.title }}</h5>
+              <p class="card-text text-muted">📍 {{ listing.location }}</p>
+              <p class="card-text">💬 {{ listing.description }}</p>
+              <p class="card-text text-primary fw-bold">
+                {{ listing.pricePerNight }} ETH / noćenje
+              </p>
 
-                <button
-                  class="btn btn-outline-danger btn-sm"
-                  @click="deleteListing(listing.id)"
-                >
-                  ❌ Obriši oglas
-                </button>
-              </div>
+              <button
+                class="btn btn-outline-danger btn-sm"
+                @click="deleteListing(listing.id)"
+              >
+                ❌ Obriši oglas
+              </button>
             </div>
           </div>
-        </template>
+        </div>
       </div>
 
       <div v-else class="text-center text-muted mt-5">
@@ -64,13 +62,13 @@ const loadUserListings = async () => {
 
   userListings.value = allListings
     .map((l) => ({
-      id: Number(l[0]),
-      owner: l[1],
-      title: l[2],
-      location: l[3],
-      description: l[4],
-      pricePerNight: ethers.utils.formatEther(l[5]),
-      image: l[6]?.[0] || "/hero.jpg",
+      id: Number(l.id),
+      owner: l.owner,
+      title: l.title,
+      location: l.location,
+      description: l.description,
+      pricePerNight: ethers.utils.formatEther(l.pricePerNight),
+      image: l.images?.[0] || "/hero.jpg",
     }))
     .filter((l) => l.owner.toLowerCase() === userAddress.toLowerCase());
 };
@@ -90,7 +88,7 @@ const deleteListing = async (listingId) => {
     const tx = await contract.deleteListing(listingId);
     await tx.wait();
 
-    userListings.value = userListings.value.filter((l) => l.id !== listingId);
+    await loadUserListings();
     toast.success("Oglas uspješno obrisan!");
   } catch (err) {
     console.error(err);

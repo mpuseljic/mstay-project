@@ -10,7 +10,6 @@ contract mStay {
         string description;
         uint pricePerNight;
         string[] images;
-        bool isActive;
     }
 
     struct Reservation {
@@ -53,35 +52,20 @@ contract mStay {
             _location,
             _description,
             _pricePerNight,
-            _images,
-            true
+            _images
         );
 
         emit ListingCreated(listingCount, msg.sender, _title);
     }
 
 function getAllListings() public view returns (Listing[] memory) {
-    uint activeCount = 0;
-
-    // Prvo prebrojimo aktivne
+    Listing[] memory allListings = new Listing[](listingCount);
     for (uint i = 1; i <= listingCount; i++) {
-        if (listings[i].isActive) {
-            activeCount++;
-        }
+        allListings[i - 1] = listings[i];
     }
-
-    Listing[] memory activeListings = new Listing[](activeCount);
-    uint index = 0;
-
-    for (uint i = 1; i <= listingCount; i++) {
-        if (listings[i].isActive) {
-            activeListings[index] = listings[i];
-            index++;
-        }
-    }
-
-    return activeListings;
+    return allListings;
 }
+
 
 
 
@@ -107,13 +91,13 @@ function getAllListings() public view returns (Listing[] memory) {
 
         emit ReservationMade(reservationCount, msg.sender, _listingId);
     }
-        function getAllReservations() public view returns (Reservation[] memory) {
-        Reservation[] memory allReservations = new Reservation[](reservationCount);
-        for (uint i = 1; i <= reservationCount; i++) {
-            allReservations[i - 1] = reservations[i];
-        }
-        return allReservations;
+function getAllReservations() public view returns (Reservation[] memory) {
+    Reservation[] memory allReservations = new Reservation[](reservationCount);
+    for (uint i = 1; i <= reservationCount; i++) {
+        allReservations[i - 1] = reservations[i];
     }
+    return allReservations;
+}
 
     function cancelReservation(uint _reservationId) public {
     Reservation memory r = reservations[_reservationId];
@@ -125,8 +109,10 @@ function getAllListings() public view returns (Listing[] memory) {
 
 function deleteListing(uint _listingId) public {
     Listing storage listing = listings[_listingId];
+    require(listing.owner != address(0), "Oglas ne postoji.");
     require(listing.owner == msg.sender, "Niste vlasnik oglasa.");
-    listing.isActive = false;
+
+    delete listings[_listingId];
 }
 
 

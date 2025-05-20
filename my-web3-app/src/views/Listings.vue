@@ -260,15 +260,20 @@ const loadListings = async () => {
     const allReservations = await contract.getAllReservations();
     console.log("🧾 Sve iz smart contracta:", allListings);
 
-    listings.value = allListings.map((l) => ({
-      id: Number(l[0]),
-      owner: l[1],
-      title: l[2],
-      location: l[3],
-      description: l[4],
-      pricePerNight: ethers.utils.formatEther(l[5]),
-      image: l[6]?.[0] || "/hero.jpg",
-    }));
+    listings.value = allListings
+      .map((l) => ({
+        id: Number(l[0]),
+        owner: l[1],
+        title: l[2],
+        location: l[3],
+        description: l[4],
+        pricePerNight: ethers.utils.formatEther(l[5]),
+        image: l[6]?.[0] || "/hero.jpg",
+      }))
+      .filter(
+        (l) =>
+          l.owner !== "0x0000000000000000000000000000000000000000" && l.title
+      ); // filtriraj obrisane
 
     filteredListings.value = [...listings.value];
   } catch (err) {
