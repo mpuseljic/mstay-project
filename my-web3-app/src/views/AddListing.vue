@@ -267,6 +267,10 @@ const addImageUrl = () => {
   }
 };
 
+const getAmenitiesArray = () => {
+  return Object.keys(amenities).map((key) => amenities[key]);
+};
+
 const submitListing = async () => {
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -284,7 +288,12 @@ const submitListing = async () => {
       address.value,
       description.value,
       ethers.utils.parseEther(price.value.toString()),
-      imageUrls.value.filter((url) => url.trim() !== "")
+      imageUrls.value.filter((url) => url.trim() !== ""),
+      getAmenitiesArray(),
+      guests.value,
+      bedrooms.value,
+      beds.value,
+      bathrooms.value
     );
 
     await tx.wait();

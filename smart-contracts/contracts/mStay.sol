@@ -10,6 +10,11 @@ contract mStay {
         string description;
         uint pricePerNight;
         string[] images;
+        bool[23] amenities;
+        uint8 guests;
+        uint8 bedrooms;
+        uint8 beds;
+        uint8 bathrooms;
     }
 
     struct Reservation {
@@ -42,7 +47,12 @@ contract mStay {
         string memory _location,
         string memory _description,
         uint _pricePerNight,
-        string[] memory _images
+        string[] memory _images,
+        bool[23] memory _amenities,
+        uint8 _guests,
+        uint8 _bedrooms,
+        uint8 _beds,
+        uint8 _bathrooms
     ) public {
         listingCount++;
         listings[listingCount] = Listing(
@@ -52,7 +62,12 @@ contract mStay {
             _location,
             _description,
             _pricePerNight,
-            _images
+            _images,
+            _amenities,
+            _guests,
+            _bedrooms,
+            _beds,
+            _bathrooms
         );
 
         emit ListingCreated(listingCount, msg.sender, _title);

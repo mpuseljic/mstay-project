@@ -64,47 +64,11 @@
             <div class="row">
               <div
                 class="col-md-6 mb-3 d-flex align-items-center gap-3"
-                v-for="(enabled, key) in listing.amenities"
+                v-for="(val, key) in filteredAmenities"
                 :key="key"
               >
-                <i
-                  class="fs-5"
-                  :class="{
-                    'fas fa-wifi': key === 'wifi',
-                    'fas fa-kitchen-set': key === 'kitchen',
-                    'fas fa-wind': key === 'airConditioning',
-                    'fas fa-tree': key === 'balcony',
-                    'fas fa-bath': key === 'hairDryer',
-                    'fas fa-suitcase': key === 'luggageDropoff',
-                    'fas fa-snowflake': key === 'refrigerator',
-                    'fas fa-burn': key === 'carbonMonoxideDetector',
-                    'fas fa-smog': key === 'smokeDetector',
-                    'fas fa-pump-soap': key === 'shampoo',
-                    'fas fa-shower': key === 'hotWater',
-                    'fas fa-toolbox': key === 'basicEquipment',
-                    'fas fa-tshirt': key === 'hangers',
-                    'fas fa-steam': key === 'iron',
-                    'fas fa-tv': key === 'tv',
-                    'fas fa-fire': key === 'heating',
-                    'fas fa-briefcase-medical': key === 'firstAidKit',
-                    'fas fa-blender': key === 'cookingBasics',
-                    'fas fa-utensils': key === 'dishesAndCutlery',
-                    'fas fa-door-open': key === 'selfCheckIn',
-                    'fas fa-key': key === 'keySafe',
-                    'fas fa-video': key === 'outdoorCameras',
-                    'fas fa-soap': key === 'washerDryer',
-                    'text-muted': !val,
-                  }"
-                ></i>
-                <span
-                  :class="[
-                    'fs-6',
-                    'text-muted',
-                    !enabled && 'text-decoration-line-through',
-                  ]"
-                >
-                  {{ amenitiesLabels[key] || key }}
-                </span>
+                <i class="fs-5" :class="iconClasses[key] || 'fas fa-circle'" />
+                <span class="fs-6">{{ amenitiesLabels[key] || key }}</span>
               </div>
             </div>
           </div>
@@ -346,6 +310,13 @@ const iconClasses = {
   washerDryer: "fas fa-soap",
 };
 
+const filteredAmenities = computed(() => {
+  if (!listing.value?.amenities) return {};
+  return Object.fromEntries(
+    Object.entries(listing.value.amenities).filter(([_, v]) => v)
+  );
+});
+
 onMounted(async () => {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const contract = new ethers.Contract(
@@ -360,6 +331,13 @@ onMounted(async () => {
   );
   if (!found) return;
 
+  const amenitiesKeys = Object.keys(amenitiesLabels);
+  const amenitiesData = found[7];
+  const amenitiesObject = {};
+  amenitiesKeys.forEach((key, index) => {
+    amenitiesObject[key] = amenitiesData[index];
+  });
+
   listing.value = {
     id: Number(found[0]),
     owner: found[1],
@@ -368,35 +346,11 @@ onMounted(async () => {
     description: found[4],
     price: ethers.utils.formatEther(found[5]),
     imageUrls: found[6],
-    guests: 2,
-    bedrooms: 1,
-    beds: 1,
-    bathrooms: 1,
-    amenities: {
-      wifi: true,
-      kitchen: true,
-      airConditioning: true,
-      balcony: true,
-      hairDryer: true,
-      luggageDropoff: true,
-      refrigerator: true,
-      carbonMonoxideDetector: false,
-      smokeDetector: false,
-      shampoo: true,
-      hotWater: true,
-      basicEquipment: true,
-      hangers: true,
-      iron: true,
-      tv: true,
-      heating: true,
-      firstAidKit: true,
-      cookingBasics: true,
-      dishesAndCutlery: true,
-      selfCheckIn: true,
-      keySafe: true,
-      outdoorCameras: false,
-      washerDryer: true,
-    },
+    guests: Number(found[8]),
+    bedrooms: Number(found[9]),
+    beds: Number(found[10]),
+    bathrooms: Number(found[11]),
+    amenities: amenitiesObject,
   };
   const allReservations = await contract.getAllReservations();
   const relevant = allReservations.filter(
