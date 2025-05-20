@@ -25,14 +25,15 @@ defineExpose({ showToast });
 <style scoped>
 .custom-toast {
   position: fixed;
-  top: 20px;
+  top: 80px;
   right: 20px;
-  background: rgba(8, 54, 55, 0.95);
+  background: #083637;
   color: white;
   padding: 12px 24px;
   border-radius: 50px;
   font-weight: bold;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 9999;
+  z-index: 100000; /* 🚨 još viši da sigurno bude iznad svega */
+  pointer-events: none; /* da ne blokira klikove */
 }
 </style>

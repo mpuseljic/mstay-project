@@ -1,11 +1,10 @@
 <template>
   <div class="home-page">
-    <!-- Hero Section -->
-    <div class="wallet-button-container">
-      <WalletConnect @wallet-connected="handleWalletConnected" />
-    </div>
+    <!-- <Navbar @wallet-connected="handleWalletConnected" />
 
-    <Toast ref="toastRef" />
+Hero Section -->
+
+    <!-- <Toast ref="toastRef" /> -->
     <section class="hero d-flex align-items-center text-white text-center">
       <div class="overlay"></div>
       <div class="container hero-content">
@@ -23,12 +22,6 @@
           </router-link>
           <router-link to="/add-listing" class="custom-btn outline">
             ➕ Dodaj smještaj
-          </router-link>
-          <router-link to="/my-reservations" class="custom-btn outline">
-            🗓️ Moje rezervacije
-          </router-link>
-          <router-link to="/my-listings" class="custom-btn outline">
-            📂 Moji oglasi
           </router-link>
         </div>
       </div>
@@ -99,10 +92,12 @@
 import WalletConnect from "@/components/WalletConnect.vue";
 import Toast from "@/components/Toast.vue";
 import { ref } from "vue";
+import Navbar from "@/components/Navbar.vue";
 
 const toastRef = ref(null);
 
 const handleWalletConnected = (address) => {
+  console.log("Wallet povezan:", address);
   toastRef.value?.showToast("Wallet uspješno povezan 🎉");
 };
 </script>
@@ -185,7 +180,7 @@ const handleWalletConnected = (address) => {
 /* Wallet button positioning */
 .wallet-button-container {
   position: absolute;
-  top: 20px;
+  top: 50px;
   right: 30px;
   z-index: 1000;
 }
