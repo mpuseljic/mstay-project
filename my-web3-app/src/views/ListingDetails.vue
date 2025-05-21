@@ -94,6 +94,39 @@
               ]"
             />
           </div>
+          <div class="mb-5" v-if="listing.reviews?.length">
+            <h4 class="fw-bold mb-4 text-dark">
+              <i class="fas fa-star me-2 text-warning"></i>Recenzije gostiju
+            </h4>
+            <div class="row row-cols-1 row-cols-md-2 g-4">
+              <div
+                class="col"
+                v-for="(review, index) in listing.reviews"
+                :key="index"
+              >
+                <div class="border rounded-4 p-3 bg-white shadow-sm h-100">
+                  <div class="d-flex align-items-center mb-2">
+                    <div
+                      class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                      style="width: 40px; height: 40px"
+                    >
+                      <strong>{{
+                        review.reviewer.slice(2, 4).toUpperCase()
+                      }}</strong>
+                    </div>
+                    <div>
+                      <div class="fw-semibold text-dark">Korisnik</div>
+                      <div class="text-muted small">
+                        <i class="fas fa-star text-warning me-1"></i
+                        >{{ review.rating }} / 5
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-body mt-2">{{ review.comment }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="col-lg-4">
@@ -351,7 +384,15 @@ onMounted(async () => {
     beds: Number(found[10]),
     bathrooms: Number(found[11]),
     amenities: amenitiesObject,
+    reviews: [],
   };
+
+  const reviews = await contract.getReviewsForListing(listing.value.id);
+  listing.value.reviews = reviews.map((r) => ({
+    reviewer: r.reviewer,
+    rating: Number(r.rating),
+    comment: r.comment,
+  }));
   const allReservations = await contract.getAllReservations();
   const relevant = allReservations.filter(
     (r) => Number(r.listingId) === listing.value.id
@@ -400,5 +441,11 @@ img {
   background-color: #888;
   transform: translateY(-50%) rotate(-20deg);
   z-index: 2;
+}
+.bg-primary {
+  background-color: #083637 !important;
+}
+.rounded-circle {
+  border-radius: 50% !important;
 }
 </style>
