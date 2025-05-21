@@ -22,7 +22,7 @@
 
               <button
                 class="btn btn-outline-danger btn-sm"
-                @click="deleteListing(listing.id)"
+                @click="openDeleteModal(listing.id)"
               >
                 ❌ Obriši oglas
               </button>
@@ -36,6 +36,19 @@
       </div>
     </div>
   </div>
+
+  <div v-if="showDeleteModal" class="modal-backdrop">
+    <div class="modal-box">
+      <h5 class="mb-3">🗑️ Potvrda brisanja</h5>
+      <p>Jeste li sigurni da želite obrisati ovaj oglas?</p>
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button class="btn btn-secondary" @click="showDeleteModal = false">
+          Odustani
+        </button>
+        <button class="btn btn-danger" @click="confirmDelete">Obriši</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -46,6 +59,38 @@ import { useToast } from "vue-toastification";
 const toast = useToast();
 
 const userListings = ref([]);
+
+const showDeleteModal = ref(false);
+const listingToDelete = ref(null);
+
+const openDeleteModal = (id) => {
+  listingToDelete.value = id;
+  showDeleteModal.value = true;
+};
+
+const confirmDelete = async () => {
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const contract = new ethers.Contract(
+      import.meta.env.VITE_CONTRACT_ADDRESS,
+      mStayJson.abi,
+      signer
+    );
+
+    const tx = await contract.deleteListing(listingToDelete.value);
+    await tx.wait();
+
+    await loadUserListings();
+    toast.success("Oglas uspješno obrisan!");
+  } catch (err) {
+    console.error(err);
+    toast.error("Greška prilikom brisanja oglasa.");
+  } finally {
+    showDeleteModal.value = false;
+    listingToDelete.value = null;
+  }
+};
 
 const loadUserListings = async () => {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -73,29 +118,6 @@ const loadUserListings = async () => {
     .filter((l) => l.owner.toLowerCase() === userAddress.toLowerCase());
 };
 
-const deleteListing = async (listingId) => {
-  if (!confirm("Jeste li sigurni da želite obrisati oglas?")) return;
-
-  try {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    const contract = new ethers.Contract(
-      import.meta.env.VITE_CONTRACT_ADDRESS,
-      mStayJson.abi,
-      signer
-    );
-
-    const tx = await contract.deleteListing(listingId);
-    await tx.wait();
-
-    await loadUserListings();
-    toast.success("Oglas uspješno obrisan!");
-  } catch (err) {
-    console.error(err);
-    toast.error("Greška prilikom brisanja oglasa.");
-  }
-};
-
 onMounted(loadUserListings);
 </script>
 
@@ -112,5 +134,27 @@ onMounted(loadUserListings);
 }
 .text-primary {
   color: #083637 !important;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+}
+
+.modal-box {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 </style>
