@@ -147,6 +147,37 @@
                       : "Rezerviraj"
                   }}
                 </button>
+                <div
+                  v-if="checkIn && checkOut"
+                  class="border-top pt-3 mt-3 text-muted small d-flex flex-column gap-1"
+                >
+                  <div class="d-flex justify-content-between">
+                    <span
+                      >{{ listing.pricePerNight }} ETH ×
+                      {{ calculateNights() }} noćenja</span
+                    >
+                    <span
+                      >{{ calculateSubtotal(listing.pricePerNight) }} ETH</span
+                    >
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span>Naknada za usluge</span>
+                    <span
+                      >{{
+                        calculateServiceFee(
+                          calculateSubtotal(listing.pricePerNight)
+                        )
+                      }}
+                      ETH</span
+                    >
+                  </div>
+                  <div
+                    class="d-flex justify-content-between border-top pt-2 fw-semibold text-dark"
+                  >
+                    <span>Ukupno</span>
+                    <span>{{ calculateTotal(listing.pricePerNight) }} ETH</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -214,6 +245,29 @@ const checkInRef = ref(null);
 const checkOutRef = ref(null);
 const guestsDropdownWrapper = ref(null);
 const router = useRouter();
+
+const calculateSubtotal = (pricePerNight) => {
+  const nights = calculateNights();
+  return (parseFloat(pricePerNight) * nights).toFixed(2);
+};
+
+const calculateServiceFee = (subtotal) => {
+  return (parseFloat(subtotal) * 0.18).toFixed(2);
+};
+
+const calculateTotal = (pricePerNight) => {
+  const subtotal = calculateSubtotal(pricePerNight);
+  const serviceFee = calculateServiceFee(subtotal);
+  return (parseFloat(subtotal) + parseFloat(serviceFee)).toFixed(2);
+};
+
+const calculateNights = () => {
+  if (!checkIn.value || !checkOut.value) return 0;
+  const start = new Date(checkIn.value);
+  const end = new Date(checkOut.value);
+  const diff = (end - start) / (1000 * 60 * 60 * 24);
+  return diff > 0 ? diff : 0;
+};
 
 const goToDetails = (id) => {
   router.push(`/listing/${id}`);
@@ -390,13 +444,14 @@ const reserve = async (listing) => {
       signer
     );
 
-    const priceInEth = ethers.utils.parseEther(
-      listing.pricePerNight.toString()
-    );
-    const total = priceInEth.mul(nights);
+    const pricePerNight = parseFloat(listing.pricePerNight);
+    const subtotal = pricePerNight * calculateNights();
+    const serviceFee = subtotal * 0.18;
+    const total = subtotal + serviceFee;
+    const totalInEther = ethers.utils.parseEther(total.toFixed(18));
 
     const tx = await contract.makeReservation(listing.id, inDate, outDate, {
-      value: total,
+      value: totalInEther,
     });
 
     await tx.wait();
@@ -946,5 +1001,19 @@ button:disabled {
     width: 100%;
     border-radius: 0 0 20px 20px;
   }
+}
+
+.card-body {
+  position: relative;
+}
+
+.card-body .price-breakdown {
+  font-size: 0.875rem;
+  color: #555;
+}
+
+.card-body .price-breakdown strong {
+  color: #000;
+  font-weight: 600;
 }
 </style>
