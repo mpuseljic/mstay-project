@@ -66,27 +66,40 @@
         </div>
         <div v-else-if="step === 3">
           <h3 class="fw-bold mb-4">📸 Dodajte fotografije</h3>
+          <input
+            type="file"
+            @change="handleImageUpload"
+            accept="image/*"
+            class="form-control mb-3"
+          />
+          <div v-if="uploading" class="text-muted">
+            ⏳ Učitavanje slike na IPFS...
+          </div>
           <div v-for="(url, index) in imageUrls" :key="index" class="mb-2">
             <input
               v-model="imageUrls[index]"
               type="text"
               class="form-control rounded-3 mb-2"
-              placeholder="https://example.com/slika.jpg"
+              readonly
+            />
+            <img
+              :src="url"
+              v-if="url"
+              class="img-fluid rounded shadow-sm"
+              style="max-height: 150px"
             />
           </div>
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm rounded-pill"
-            @click="addImageUrl"
-            :disabled="imageUrls.length >= 10"
-          >
-            ➕ Dodaj još sliku
-          </button>
           <div class="d-flex justify-content-between mt-4">
             <button class="btn btn-outline-secondary" @click="prevStep">
               Natrag
             </button>
-            <button class="btn btn-dark" @click="nextStep">Dalje</button>
+            <button
+              class="btn btn-dark"
+              @click="nextStep"
+              :disabled="imageUrls.length === 0"
+            >
+              Dalje
+            </button>
           </div>
         </div>
         <div v-else-if="step === 4">
@@ -167,6 +180,7 @@ import { ref, reactive } from "vue";
 import { ethers } from "ethers";
 import mStayJson from "@/contracts/mStay.json";
 import { useToast } from "vue-toastification";
+import { uploadToIPFS } from "@/utils/uploadToIPFS";
 const toast = useToast();
 
 const step = ref(1);
@@ -179,6 +193,7 @@ const bedrooms = ref(1);
 const beds = ref(1);
 const bathrooms = ref(1);
 const imageUrls = ref([""]);
+const uploading = ref(false);
 
 const amenities = reactive({
   wifi: false,
@@ -256,6 +271,22 @@ const iconClasses = {
   keySafe: "fas fa-key",
   outdoorCameras: "fas fa-video",
   washerDryer: "fas fa-soap",
+};
+
+const handleImageUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    uploading.value = true;
+    const ipfsUrl = await uploadToIPFS(file);
+    imageUrls.value.push(ipfsUrl);
+    toast.success("✅ Slika učitana na IPFS!");
+  } catch (err) {
+    console.error(err);
+    toast.error("❌ Greška pri uploadu slike.");
+  } finally {
+    uploading.value = false;
+  }
 };
 
 const nextStep = () => step.value++;
