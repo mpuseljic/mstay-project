@@ -15,6 +15,7 @@ contract mStay {
         uint8 bedrooms;
         uint8 beds;
         uint8 bathrooms;
+        bool isActive;
     }
 
     struct Reservation {
@@ -23,14 +24,15 @@ contract mStay {
         uint listingId;
         uint checkInDate;
         uint checkOutDate;
+        uint totalPrice;
     }
 
     struct Review {
-    address reviewer;
-    uint listingId;
-    uint8 rating; // 1–5
-    string comment;
-}
+        address reviewer;
+        uint listingId;
+        uint8 rating; // 1–5
+        string comment;
+    }
 
     uint public listingCount;
     uint public reservationCount;
@@ -41,6 +43,10 @@ contract mStay {
 
     event ListingCreated(uint id, address owner, string title);
     event ReservationMade(uint id, address guest, uint listingId);
+    event ListingDeactivated(uint id);
+    event ReservationCancelled(uint id);
+
+    // ----------- LISTINGS -----------
 
     function createListing(
         string memory _title,
@@ -67,31 +73,78 @@ contract mStay {
             _guests,
             _bedrooms,
             _beds,
-            _bathrooms
+            _bathrooms,
+            true
         );
 
         emit ListingCreated(listingCount, msg.sender, _title);
     }
 
-function getAllListings() public view returns (Listing[] memory) {
-    Listing[] memory allListings = new Listing[](listingCount);
-    for (uint i = 1; i <= listingCount; i++) {
-        allListings[i - 1] = listings[i];
+    function deactivateListing(uint _listingId) public {
+        Listing storage listing = listings[_listingId];
+        require(listing.owner == msg.sender, "Niste vlasnik oglasa.");
+        listing.isActive = false;
+
+        emit ListingDeactivated(_listingId);
     }
-    return allListings;
-}
 
+    function getAllListings() public view returns (Listing[] memory) {
+        uint count = 0;
+        for (uint i = 1; i <= listingCount; i++) {
+            if (listings[i].isActive) count++;
+        }
 
+        Listing[] memory activeListings = new Listing[](count);
+        uint index = 0;
+        for (uint i = 1; i <= listingCount; i++) {
+            if (listings[i].isActive) {
+                activeListings[index] = listings[i];
+                index++;
+            }
+        }
+        return activeListings;
+    }
 
+    function getListingsByOwner(address _owner) public view returns (Listing[] memory) {
+        uint count = 0;
+        for (uint i = 1; i <= listingCount; i++) {
+            if (listings[i].owner == _owner && listings[i].isActive) count++;
+        }
+
+        Listing[] memory result = new Listing[](count);
+        uint index = 0;
+        for (uint i = 1; i <= listingCount; i++) {
+            if (listings[i].owner == _owner && listings[i].isActive) {
+                result[index] = listings[i];
+                index++;
+            }
+        }
+        return result;
+    }
 
     function makeReservation(
         uint _listingId,
         uint _checkInDate,
         uint _checkOutDate
     ) public payable {
-        Listing memory listing = listings[_listingId];
-        require(listing.owner != address(0), "Listing does not exist.");
-        require(msg.value >= listing.pricePerNight, "Not enough ETH sent.");
+        Listing storage listing = listings[_listingId];
+        require(listing.owner != address(0), "Oglas ne postoji.");
+        require(listing.isActive, "Oglas nije aktivan.");
+        require(_checkOutDate > _checkInDate, "Datumi nisu valjani.");
+
+        uint numNights = (_checkOutDate - _checkInDate) / 1 days;
+        require(numNights > 0, "Minimalno 1 noc.");
+        uint totalPrice = listing.pricePerNight * numNights;
+        require(msg.value >= totalPrice, "Nedovoljno ETH.");
+
+        // provjera preklapanja rezervacija
+        for (uint i = 1; i <= reservationCount; i++) {
+            Reservation memory r = reservations[i];
+            if (r.listingId == _listingId) {
+                bool overlaps = _checkInDate < r.checkOutDate && _checkOutDate > r.checkInDate;
+                require(!overlaps, "Termin je vec zauzet.");
+            }
+        }
 
         reservationCount++;
         reservations[reservationCount] = Reservation(
@@ -99,59 +152,69 @@ function getAllListings() public view returns (Listing[] memory) {
             msg.sender,
             _listingId,
             _checkInDate,
-            _checkOutDate
+            _checkOutDate,
+            totalPrice
         );
 
-        listing.owner.transfer(msg.value);
+        listing.owner.transfer(totalPrice);
 
         emit ReservationMade(reservationCount, msg.sender, _listingId);
     }
-function getAllReservations() public view returns (Reservation[] memory) {
-    Reservation[] memory allReservations = new Reservation[](reservationCount);
-    for (uint i = 1; i <= reservationCount; i++) {
-        allReservations[i - 1] = reservations[i];
+
+    function getReservationsByGuest(address _guest) public view returns (Reservation[] memory) {
+        uint count = 0;
+        for (uint i = 1; i <= reservationCount; i++) {
+            if (reservations[i].guest == _guest) count++;
+        }
+
+        Reservation[] memory result = new Reservation[](count);
+        uint index = 0;
+        for (uint i = 1; i <= reservationCount; i++) {
+            if (reservations[i].guest == _guest) {
+                result[index] = reservations[i];
+                index++;
+            }
+        }
+        return result;
     }
-    return allReservations;
-}
 
     function cancelReservation(uint _reservationId) public {
-    Reservation memory r = reservations[_reservationId];
-    require(r.id != 0, "Rezervacija ne postoji.");
-    require(r.guest == msg.sender, "Niste vlasnik rezervacije.");
+        Reservation memory r = reservations[_reservationId];
+        require(r.id != 0, "Rezervacija ne postoji.");
+        require(r.guest == msg.sender, "Niste vlasnik rezervacije.");
 
-    delete reservations[_reservationId];
-}
+        delete reservations[_reservationId];
 
-function deleteListing(uint _listingId) public {
-    Listing storage listing = listings[_listingId];
-    require(listing.owner != address(0), "Oglas ne postoji.");
-    require(listing.owner == msg.sender, "Niste vlasnik oglasa.");
-
-    delete listings[_listingId];
-}
-
-
-function leaveReview(uint _listingId, uint8 _rating, string memory _comment) public {
-    require(_rating >= 1 && _rating <= 5, "Rating mora biti 1-5");
-    bool hasReservation = false;
-
-    for (uint i = 1; i <= reservationCount; i++) {
-        if (
-            reservations[i].listingId == _listingId &&
-            reservations[i].guest == msg.sender
-        ) {
-            hasReservation = true;
-            break;
-        }
+        emit ReservationCancelled(_reservationId);
     }
 
-    require(hasReservation, "Niste rezervirali ovaj objekt.");
-    listingReviews[_listingId].push(Review(msg.sender, _listingId, _rating, _comment));
-}
+    function getAllReservations() public view returns (Reservation[] memory) {
+        Reservation[] memory allReservations = new Reservation[](reservationCount);
+        for (uint i = 1; i <= reservationCount; i++) {
+            allReservations[i - 1] = reservations[i];
+        }
+        return allReservations;
+    }
 
-function getReviewsForListing(uint _listingId) public view returns (Review[] memory) {
-    return listingReviews[_listingId];
-}
+    function leaveReview(uint _listingId, uint8 _rating, string memory _comment) public {
+        require(_rating >= 1 && _rating <= 5, "Rating mora biti 1-5");
+        bool hasReservation = false;
 
+        for (uint i = 1; i <= reservationCount; i++) {
+            if (
+                reservations[i].listingId == _listingId &&
+                reservations[i].guest == msg.sender
+            ) {
+                hasReservation = true;
+                break;
+            }
+        }
 
+        require(hasReservation, "Niste rezervirali ovaj objekt.");
+        listingReviews[_listingId].push(Review(msg.sender, _listingId, _rating, _comment));
+    }
+
+    function getReviewsForListing(uint _listingId) public view returns (Review[] memory) {
+        return listingReviews[_listingId];
+    }
 }
